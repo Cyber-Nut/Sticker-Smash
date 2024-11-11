@@ -4,14 +4,23 @@ import ImageViewer from "@/components/ImageViewer";
 import Button from "@/components/button";
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from "react";
-
+import CircleButton from "@/components/CircleButton";
+import IconButton from "@/components/IconButton"
+import EmojiPicker from "@/components/EmojiPicker";
+import EmojiList from "@/components/EmojiList";
+import { type ImageSource } from "expo-image";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const PlaceholderImage = require('../../assets/images/background-image.png');
+
+import EmojiSticker from "@/components/EmojiSticker";
 
 export default function Index(){
 
   const[selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const[showAppOptions, setShowAppOptions] = useState<boolean>(false);
+  const[isModalVisible, setModalVisible] = useState<boolean>(false);
+  const[pickedEmoji, setPickedEmoji] = useState<ImageSource | undefined>(undefined);
 
   const pickImageAsync = async()=>{
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -20,30 +29,57 @@ export default function Index(){
     });
 
     if(!result.canceled){
-      setSelectedImage(result.assets[0].uri); //this will store the uri of the selected image under the selectedImage varialble
+      setSelectedImage(result.assets[0].uri);//this will store the uri of the selected image under the selectedImage varialble
       setShowAppOptions(true); // after the user select an image, the extra buttons will be visible
     } else{
       alert('You did not select any image.');
     }
   }
 
+  const onReset =()=>{
+    setShowAppOptions(false);
+  }
+
+  const onAddSticker = ()=>{
+    setModalVisible(true);
+  }
+
+  const onSaveImageAsync = async ()=>{
+    setModalVisible(false);
+  }
+
+  const onModalClose = ()=>{
+    //we will implement this later
+  }
+
   return(
-    <View style={styles.container}>
+
+    //This is a JavaScript logical AND (&&) operator. In this context, it's checking if pickedEmoji has a truthy value (i.e., it's not null, undefined, or false). If pickedEmoji is truthy, the component that follows (<EmojiSticker />) will be rendered. If pickedEmoji is falsy, nothing will be rendered for this part of the code.(line 60)
+    <GestureHandlerRootView style={styles.container}>
       <View style= {styles.imageContainer}>
-        <ImageViewer imgSource={PlaceholderImage} />
+        <ImageViewer imgSource={PlaceholderImage} selectedImage={selectedImage}/>
+        {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji}/>} 
       </View>
 
       {
         showAppOptions? // condition to check if the user has selected an image or not
-        (<View/>)
+        ( <View style={styles.optionsContainer}>
+          <View style={styles.optionsRow}>
+            <IconButton icon="refresh" label="Reset" onPress={onReset} />
+            <CircleButton onPress={onAddSticker} />
+            <IconButton icon="save-alt" label="Save" onPress={onSaveImageAsync} />
+          </View>
+        </View>)
         :
         (<View style={styles.footContainer}>
           <Button label={"Choose a photo"} theme="primary" onPress={pickImageAsync}/>
           <Button label={"Use this photo"}/>
         </View>)
       }
-      
-    </View>
+      <EmojiPicker isVisible={isModalVisible} onClose={onModalClose}>
+       <EmojiList onSelect={setPickedEmoji} onCloseModal={onModalClose}/>
+      </EmojiPicker>
+    </GestureHandlerRootView>
   );
 }
 
@@ -65,7 +101,15 @@ const styles = StyleSheet.create({
   footContainer:{
     flex: 1/3,
     alignItems: 'center',
-  }
+  },
+  optionsContainer: {
+    position: 'absolute',
+    bottom: 80,
+  },
+  optionsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
 });
 
 

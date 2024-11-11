@@ -8,7 +8,7 @@ type Props = {
 export default function CircleButton({onPress}:Props){
     return(
         <View style={styles.circleButtonContainer}>
-            <Pressable style = {styles.circleButtton}>
+            <Pressable style = {styles.circleButtton} onPress={onPress}>
                 <MaterialIcons name="add" size={38} color={"#25292e"}/>
             </Pressable>
         </View>
