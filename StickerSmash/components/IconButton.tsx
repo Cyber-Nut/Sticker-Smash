@@ -9,7 +9,7 @@ type Props = {
 
 export default function CircleButton({icon, label, onPress}:Props){
     return(
-        <Pressable style={styles.iconButton}>
+        <Pressable style={styles.iconButton} onPress={onPress}>
             <MaterialIcons name={icon} size={24} color="#fff" />
             <Text style={styles.iconButtonLabel}>{label}</Text>
         </Pressable>

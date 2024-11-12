@@ -3,24 +3,36 @@ import { StyleSheet } from "react-native";
 import ImageViewer from "@/components/ImageViewer";
 import Button from "@/components/button";
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from "react";
+import { useRef, useState } from "react";
 import CircleButton from "@/components/CircleButton";
 import IconButton from "@/components/IconButton"
 import EmojiPicker from "@/components/EmojiPicker";
 import EmojiList from "@/components/EmojiList";
 import { type ImageSource } from "expo-image";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import * as MediaLibrary from 'expo-media-library';
+import EmojiSticker from "@/components/EmojiSticker";
+import { captureRef, captureScreen } from "react-native-view-shot";
+import { Platform } from "react-native";
+import domtoimage from 'dom-to-image';
+
 
 const PlaceholderImage = require('../../assets/images/background-image.png');
 
-import EmojiSticker from "@/components/EmojiSticker";
 
 export default function Index(){
+
+  const imageRef = useRef<View>(null);
 
   const[selectedImage, setSelectedImage] = useState<string | undefined>(undefined);
   const[showAppOptions, setShowAppOptions] = useState<boolean>(false);
   const[isModalVisible, setModalVisible] = useState<boolean>(false);
   const[pickedEmoji, setPickedEmoji] = useState<ImageSource | undefined>(undefined);
+  const[status, requestPermission] = MediaLibrary.usePermissions();
+
+  if(status ===null){
+    requestPermission();
+  }
 
   const pickImageAsync = async()=>{
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -45,11 +57,42 @@ export default function Index(){
   }
 
   const onSaveImageAsync = async ()=>{
-    setModalVisible(false);
+
+    if(Platform.OS !== 'web'){
+      try{
+        const localUri = await captureRef(imageRef, {
+          height: 440,
+          quality: 1,
+        });
+  
+        await MediaLibrary.saveToLibraryAsync(localUri);
+        if(localUri){
+          alert('Saved!');
+        }
+      } catch(e){
+        console.log(e);
+      }
+    } else{
+      try{
+        const dataUrl = await domtoimage.toJpeg(imageRef.current, {
+          quality: 0.95,
+          width: 320,
+          height: 440,
+        });
+
+        let link = document.createElement('a');
+        link.download = 'sticker-smash.jpeg';
+        link.href = dataUrl;
+        link.click();
+      } catch(e){
+        console.log(e);
+      }
+    }
+   
   }
 
   const onModalClose = ()=>{
-    //we will implement this later
+    setModalVisible(false);
   }
 
   return(
@@ -57,8 +100,10 @@ export default function Index(){
     //This is a JavaScript logical AND (&&) operator. In this context, it's checking if pickedEmoji has a truthy value (i.e., it's not null, undefined, or false). If pickedEmoji is truthy, the component that follows (<EmojiSticker />) will be rendered. If pickedEmoji is falsy, nothing will be rendered for this part of the code.(line 60)
     <GestureHandlerRootView style={styles.container}>
       <View style= {styles.imageContainer}>
+        <View ref={imageRef} collapsable={false}>
         <ImageViewer imgSource={PlaceholderImage} selectedImage={selectedImage}/>
         {pickedEmoji && <EmojiSticker imageSize={40} stickerSource={pickedEmoji}/>} 
+        </View>
       </View>
 
       {
